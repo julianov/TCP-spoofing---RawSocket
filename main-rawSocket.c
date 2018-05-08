@@ -7,7 +7,7 @@
 #include<netinet/ip.h>
  
 /* 
-    96 bit (12 bytes) pseudo header needed for tcp header checksum calculation 
+   Este pseudo header es necesario para checksum para encabezado TCP 
 */
 struct pseudo_header
 {
@@ -70,12 +70,12 @@ int main (void)
     struct sockaddr_in sin;
     struct pseudo_header psh;
      
-    //informaci�n
+    //información
     data = datagram + sizeof(struct iphdr) + sizeof(struct tcphdr);
     strcpy(data , "ABCDEFGHIJKLMNOPQRSTUVWXYZ");
      
-    //para la resoluci�n de direcciones
-    strcpy(source_ip , "1.1.1.1"); //IP mía para hacer spoof
+    //para la resolución de direcciones
+    strcpy(source_ip , "1.1.1.1"); //IP para hacer spoof
     sin.sin_family = AF_INET;
     sin.sin_port = htons(80);
     sin.sin_addr.s_addr = inet_addr ("192.168.1.108"); //IP a la que se quiere enviar el paquete
@@ -85,7 +85,7 @@ int main (void)
     iph->version = 4;
     iph->tos = 0;
     iph->tot_len = sizeof (struct iphdr) + sizeof (struct tcphdr) + strlen(data);
-    iph->id = htonl (54321); //Id of this packet
+    iph->id = htonl (54321); //Id del encabezado IP
     iph->frag_off = 0;
     iph->ttl = 255;
     iph->protocol = IPPROTO_TCP;
@@ -96,7 +96,7 @@ int main (void)
     //Ip checksum
     iph->check = csum ((unsigned short *) datagram, iph->tot_len);
      
-    //TCP Header
+    //encabezado TCP
     tcph->source = htons (1234);
     tcph->dest = htons (80);
     tcph->seq = 0;
@@ -109,7 +109,7 @@ int main (void)
     tcph->ack=0;
     tcph->urg=0;
     tcph->window = htons (5840); /* ventana TCP seteada a 5840 */
-    tcph->check = 0; //checksum en cero, necesario para llamar a la funci�n csum
+    tcph->check = 0; //checksum en cero, necesario para llamar a la función csum
     tcph->urg_ptr = 0;
      
     //checksum para TCP
@@ -127,28 +127,29 @@ int main (void)
      
     tcph->check = csum( (unsigned short*) pseudogram , psize);
      
-    //IP_HDRINCL para informar al kernel que los encabezados est�n incluidos
+    //Envio 
+ 
     int one = 1;
     const int *val = &one;
-     
+     //IP_HDRINCL para informar al kernel que los encabezados están incluidos
     if (setsockopt (s, IPPROTO_IP, IP_HDRINCL, val, sizeof (one)) < 0)
     {
-        perror("Error setting IP_HDRINCL");
+        printf("Error IP_HDRINCL");
         exit(0);
     }
      
     
     while (1)
     {
-        //se env�a el paquete
+        //se envía el paquete
         if (sendto (s, datagram, iph->tot_len ,  0, (struct sockaddr *) &sin, sizeof (sin)) < 0)
         {
-            perror("sendto failed");
+            printf("fallo en el envio");
         }
         //corroboramos envio
         else
         {
-            printf ("Packet Send. Length : %d \n" , iph->tot_len);
+            printf ("paquete enviado. Longitud : %d \n" , iph->tot_len);
         }
     }
      
